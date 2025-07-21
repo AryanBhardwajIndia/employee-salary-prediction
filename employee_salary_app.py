@@ -25,7 +25,30 @@ st.set_page_config(layout="centered")
 st.title("Employee Salary Prediction")
 
 # Load the pre-uploaded CSV directly
-df = pd.read_csv("adult 3.csv")  # Ensure this is in the same directory
+@st.cache_data
+def load_and_preprocess_data():
+    df = pd.read_csv('adult 3.csv')
+    df.replace('?', np.nan, inplace=True)
+
+    cat_cols = df.select_dtypes(include='object').columns
+    encoders = {}
+
+    for col in cat_cols:
+        le = LabelEncoder()
+        df[col] = le.fit_transform(df[col].astype(str))
+        encoders[col] = le
+
+    imputer = KNNImputer(n_neighbors=5)
+    df_imputed = pd.DataFrame(imputer.fit_transform(df), columns=df.columns)
+
+    for col in cat_cols:
+        df_imputed[col] = df_imputed[col].round().astype(int)
+
+    return df_imputed, cat_cols
+
+# Call the function
+df, cat_cols = load_and_preprocess_data()
+  # Ensure this is in the same directory
 
 st.subheader("Raw Dataset")
 st.dataframe(df.head())
@@ -74,7 +97,13 @@ if selected_features:
     selected_model_name = st.selectbox("Choose a Model", list(models.keys()))
     model = models[selected_model_name]
 
+   @st.cache_resource
+def train_model(model, X_train, y_train):
     model.fit(X_train, y_train)
+    return model
+
+model = train_model(model, X_train, y_train)
+
     y_pred = model.predict(X_test)
 
     # ROC prediction probabilities
