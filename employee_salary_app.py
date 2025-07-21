@@ -75,7 +75,7 @@ models = {
 selected_model_name = st.selectbox("Choose a Model", list(models.keys()))
 model = models[selected_model_name]
 
-@st.cache_resource
+
 def train_model(model, X_train, y_train):
     model.fit(X_train, y_train)
     return model
